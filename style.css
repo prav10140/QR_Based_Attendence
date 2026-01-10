@@ -1,0 +1,40 @@
+body {
+  background: linear-gradient(120deg, #0f172a, #020617);
+  font-family: Arial, sans-serif;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.app {
+  background: #020617;
+  padding: 30px;
+  border-radius: 15px;
+  width: 360px;
+  box-shadow: 0 0 20px #0ea5e9;
+  text-align: center;
+}
+
+h1 {
+  color: #38bdf8;
+}
+
+#reader {
+  margin: 20px auto;
+  width: 300px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#status {
+  margin-top: 20px;
+  font-size: 20px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.waiting { background: #334155; }
+.success { background: #16a34a; }
+.error { background: #dc2626; }

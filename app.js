@@ -1,11 +1,13 @@
-// 🔥 Replace with your Firebase config
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  databaseURL: "YOUR_DB_URL",
-  projectId: "YOUR_PROJECT_ID"
+  apiKey: "AIzaSyAD1VORa-bf-zcJKBq8F_M5ez108dXYz78",
+  authDomain: "chat-43c01.firebaseapp.com",
+  databaseURL: "https://chat-43c01-default-rtdb.firebaseio.com",
+  projectId: "chat-43c01",
+  storageBucket: "chat-43c01.firebasestorage.app",
+  messagingSenderId: "605263762443",
+  appId: "1:605263762443:web:82ac2e6a1cc0fa0e84a30e",
+  measurementId: "G-VVBCEN7R6D"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart QR Attendance</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+</head>
+
+<body>
+<div class="app">
+
+  <h1>QR Attendance</h1>
+  <p>Scan participant QR to verify entry</p>
+
+  <div id="reader"></div>
+
+  <div id="status" class="waiting">
+    Waiting for QR scan...
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

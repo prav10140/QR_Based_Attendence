@@ -3,29 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Gatekeeper</title>
-    
+    <title>Event Attendance</title>
+    <link rel="shortcut icon" href="#">
     <link rel="stylesheet" href="style.css">
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>Event Check-In</h1>
-            <p>Scan participant QR Code to mark attendance</p>
-        </header>
+    <div class="app-container">
+        <h1>Event Check-In</h1>
+        
+        <div id="connection-status" class="status-badge waiting">Connecting to Database...</div>
 
         <div id="reader"></div>
 
         <div id="result-card" class="hidden">
-            <h2 id="status-title">Status</h2>
-            <p id="status-message">Waiting...</p>
-            <div id="participant-details"></div>
+            <h2 id="student-name">Student Name</h2>
+            <div class="badge" id="status-badge">PRESENT</div>
+            <p id="result-msg">Details here</p>
+        </div>
+
+        <div class="debug-log">
+            <h3>System Log:</h3>
+            <div id="console-output"></div>
         </div>
     </div>
 

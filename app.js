@@ -6,98 +6,122 @@ const firebaseConfig = {
   messagingSenderId: "1055007791060",
   appId: "1:1055007791060:web:d627c9a9456a0467f6e841",
   measurementId: "G-JZNXLBJEVY"
-};;
+};
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// ==============================
-// 2. DOM ELEMENTS
-// ==============================
+// ==========================================
+// 2. SETUP
+// ==========================================
+const consoleOutput = document.getElementById('console-output');
+const connectionBadge = document.getElementById('connection-status');
 const resultCard = document.getElementById("result-card");
-const statusTitle = document.getElementById("status-title");
-const statusMsg = document.getElementById("status-message");
-const detailsDiv = document.getElementById("participant-details");
+const studentNameEl = document.getElementById("student-name");
+const statusBadge = document.getElementById("status-badge");
+const resultMsg = document.getElementById("result-msg");
 
-let isScanning = true; // Flag to prevent double scanning
+function log(msg) {
+    const p = document.createElement('div');
+    p.innerText = `> ${msg}`;
+    consoleOutput.prepend(p);
+}
 
-// ==============================
-// 3. MAIN LOGIC
-// ==============================
+// Init Firebase
+let db;
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    checkConnection();
+} catch (e) {
+    connectionBadge.innerText = "Config Error";
+    connectionBadge.className = "status-badge offline";
+}
 
-async function onScanSuccess(decodedText, decodedResult) {
+async function checkConnection() {
+    try {
+        await db.collection('test').doc('ping').set({ active: true });
+        connectionBadge.innerText = "System Online";
+        connectionBadge.className = "status-badge online";
+    } catch (error) {
+        connectionBadge.innerText = "Database Access Denied";
+        connectionBadge.className = "status-badge offline";
+        log("Check Firestore Rules in Console!");
+    }
+}
+
+// ==========================================
+// 3. SCANNING LOGIC
+// ==========================================
+let isScanning = true;
+
+async function onScanSuccess(decodedText) {
     if (!isScanning) return;
-    
-    isScanning = false; // Pause scanning to process
-    
-    // Play a beep sound (optional UX)
-    // new Audio('beep.mp3').play().catch(e => {});
+    isScanning = false;
 
-    showUIState("Processing...", "Checking database...", "neutral");
+    log(`Scanned Raw: ${decodedText}`);
+
+    // 1. Parse Data (Handle JSON or Simple Text)
+    let studentId = decodedText;
+    let studentName = "Unknown Student";
 
     try {
-        // We assume the QR code text is the Unique ID (e.g., "USER_001")
-        const participantId = decodedText.trim();
-        
-        // Check Firestore
-        const docRef = db.collection("attendance").doc(participantId);
+        const data = JSON.parse(decodedText);
+        if(data.id) studentId = data.id;
+        if(data.name) studentName = data.name;
+    } catch (e) {
+        // Not JSON, just use the raw text as ID
+        studentId = decodedText;
+    }
+
+    // 2. Check Database
+    try {
+        const docRef = db.collection("attendance").doc(studentId);
         const docSnap = await docRef.get();
 
-        if (docSnap.exists && docSnap.data().status === "Present") {
-            // CASE: DUPLICATE
-            showUIState("DUPLICATE ENTRY", `ID: ${participantId} is already inside.`, "error");
+        if (docSnap.exists) {
+            const data = docSnap.data();
+            if (data.status === "Present") {
+                showUI(studentName, "ALREADY HERE", "Duplicate Entry", "error");
+            } else {
+                await markPresent(studentId, studentName);
+            }
         } else {
-            // CASE: NEW ENTRY (Mark as Present)
-            await docRef.set({
-                id: participantId,
-                status: "Present",
-                entryTime: firebase.firestore.FieldValue.serverTimestamp(),
-                userAgent: navigator.userAgent // Optional: track which device scanned them
-            }, { merge: true });
-
-            showUIState("ACCESS GRANTED", `Welcome! ID: ${participantId} marked present.`, "success");
+            // New student
+            await markPresent(studentId, studentName);
         }
 
     } catch (error) {
-        console.error("Database Error:", error);
-        showUIState("SYSTEM ERROR", "Could not connect to Firebase.", "error");
+        log("DB Error: " + error.message);
+        showUI("Error", "FAILED", "Database Error", "error");
     }
 
-    // Cooldown: Wait 3 seconds before allowing next scan
-    setTimeout(() => {
-        isScanning = true;
-        resultCard.classList.add("hidden"); // Optional: hide card after delay
-    }, 4000);
+    // Cooldown 3 seconds
+    setTimeout(() => { isScanning = true; }, 3000);
 }
 
-function onScanFailure(error) {
-    // Keeps console clean; uncomment if debugging
-    // console.warn(`Scan error: ${error}`);
+async function markPresent(id, name) {
+    await db.collection("attendance").doc(id).set({
+        id: id,
+        name: name,
+        status: "Present",
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showUI(name, "MARKED PRESENT", `ID: ${id}`, "success");
 }
 
-// ==============================
-// 4. UI HELPER
-// ==============================
-function showUIState(title, message, type) {
-    resultCard.classList.remove("hidden", "status-success", "status-error");
+function showUI(name, badgeText, msg, type) {
+    studentNameEl.innerText = name;
+    statusBadge.innerText = badgeText;
+    resultMsg.innerText = msg;
     
-    statusTitle.innerText = title;
-    statusMsg.innerText = message;
-    
-    if (type === "success") {
-        resultCard.classList.add("status-success");
-    } else if (type === "error") {
-        resultCard.classList.add("status-error");
-    }
+    resultCard.classList.remove("hidden", "success-card", "error-card");
+    resultCard.classList.add(type === "success" ? "success-card" : "error-card");
 }
 
-// ==============================
-// 5. INITIALIZE SCANNER
-// ==============================
-const html5QrcodeScanner = new Html5QrcodeScanner(
-    "reader", 
-    { fps: 10, qrbox: { width: 250, height: 250 } }, 
-    false
-);
-
-html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+// ==========================================
+// 4. CAMERA START
+// ==========================================
+const scanner = new Html5QrcodeScanner("reader", { 
+    fps: 20, // Scans faster
+    qrbox: 250,
+    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] 
+});
+scanner.render(onScanSuccess);

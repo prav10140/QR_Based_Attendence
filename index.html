@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Attendance Tracker</title>
+    <title>Event Gatekeeper</title>
     <link rel="shortcut icon" href="#">
     <link rel="stylesheet" href="style.css">
     
@@ -14,33 +14,41 @@
 </head>
 <body>
 
-    <div class="main-layout">
+    <div class="app-wrapper">
         
-        <div class="scanner-section">
-            <h1>Event Check-In</h1>
-            <div id="connection-status" class="status-badge waiting">Connecting...</div>
+        <div class="scanner-panel">
+            <header>
+                <h1>Attendance Scanner</h1>
+                <div id="connection-status" class="status-pill waiting">Connecting...</div>
+            </header>
 
-            <div id="reader"></div>
+            <div class="scanner-box">
+                <div id="reader"></div>
+            </div>
 
-            <div id="result-card" class="hidden">
-                <h2 id="student-name">Student Name</h2>
-                <div class="badge" id="status-badge">STATUS</div>
-                <p id="result-msg">Details</p>
+            <div id="result-card" class="result-card hidden">
+                <div class="icon-box" id="status-icon">✅</div>
+                <div class="details">
+                    <h2 id="student-name">Loading...</h2>
+                    <span id="student-id" class="sub-text">ID: --</span>
+                </div>
+                <div class="status-tag" id="status-badge">Present</div>
+                <p id="time-msg" class="time-text">Just now</p>
             </div>
             
-            <div class="debug-log">
-                <h3>System Log:</h3>
+            <div class="debug-area">
+                <p>System Log:</p>
                 <div id="console-output"></div>
             </div>
         </div>
 
-        <div class="sidebar-section">
+        <div class="sidebar-panel">
             <div class="sidebar-header">
                 <h2>Present Students</h2>
-                <span id="count-badge">0</span>
+                <div class="count-badge" id="count-badge">0</div>
             </div>
             <ul id="attendance-list">
-                <li class="empty-list">Waiting for scans...</li>
+                <li class="empty-state">Waiting for scans...</li>
             </ul>
         </div>
 

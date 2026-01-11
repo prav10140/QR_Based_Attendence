@@ -17,6 +17,8 @@ const resultCard = document.getElementById("result-card");
 const studentNameEl = document.getElementById("student-name");
 const statusBadge = document.getElementById("status-badge");
 const resultMsg = document.getElementById("result-msg");
+const attendanceList = document.getElementById("attendance-list");
+const countBadge = document.getElementById("count-badge");
 
 function log(msg) {
     const p = document.createElement('div');
@@ -40,15 +42,55 @@ async function checkConnection() {
         await db.collection('test').doc('ping').set({ active: true });
         connectionBadge.innerText = "System Online";
         connectionBadge.className = "status-badge online";
+        
+        // Start listening for sidebar updates immediately
+        startLiveAttendanceList(); 
+        
     } catch (error) {
-        connectionBadge.innerText = "Database Access Denied";
+        connectionBadge.innerText = "Access Denied";
         connectionBadge.className = "status-badge offline";
-        log("Check Firestore Rules in Console!");
+        log("Error: Check Firebase Rules.");
     }
 }
 
 // ==========================================
-// 3. SCANNING LOGIC
+// 3. REAL-TIME SIDEBAR LISTENER
+// ==========================================
+function startLiveAttendanceList() {
+    // This listens to the database 24/7 for changes
+    db.collection("attendance")
+      .orderBy("timestamp", "desc") // Show newest first
+      .onSnapshot((snapshot) => {
+          
+          attendanceList.innerHTML = ""; // Clear list
+          countBadge.innerText = snapshot.size; // Update count
+
+          if (snapshot.empty) {
+              attendanceList.innerHTML = '<li class="empty-list">No students present yet.</li>';
+              return;
+          }
+
+          snapshot.forEach((doc) => {
+              const data = doc.data();
+              const time = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now';
+              
+              // Create list HTML
+              const li = document.createElement('li');
+              li.className = 'student-item';
+              li.innerHTML = `
+                  <div class="student-info">
+                      <strong>${data.name || 'Unknown'}</strong>
+                      <small>ID: ${data.id}</small>
+                  </div>
+                  <div class="time-stamp">${time}</div>
+              `;
+              attendanceList.appendChild(li);
+          });
+      });
+}
+
+// ==========================================
+// 4. SCANNING LOGIC
 // ==========================================
 let isScanning = true;
 
@@ -56,9 +98,7 @@ async function onScanSuccess(decodedText) {
     if (!isScanning) return;
     isScanning = false;
 
-    log(`Scanned Raw: ${decodedText}`);
-
-    // 1. Parse Data (Handle JSON or Simple Text)
+    // 1. Parse Data
     let studentId = decodedText;
     let studentName = "Unknown Student";
 
@@ -67,7 +107,6 @@ async function onScanSuccess(decodedText) {
         if(data.id) studentId = data.id;
         if(data.name) studentName = data.name;
     } catch (e) {
-        // Not JSON, just use the raw text as ID
         studentId = decodedText;
     }
 
@@ -78,19 +117,13 @@ async function onScanSuccess(decodedText) {
 
         if (docSnap.exists) {
             const data = docSnap.data();
-            if (data.status === "Present") {
-                showUI(studentName, "ALREADY HERE", "Duplicate Entry", "error");
-            } else {
-                await markPresent(studentId, studentName);
-            }
+            showUI(studentName, "ALREADY HERE", "Duplicate Entry", "error");
         } else {
-            // New student
             await markPresent(studentId, studentName);
         }
 
     } catch (error) {
-        log("DB Error: " + error.message);
-        showUI("Error", "FAILED", "Database Error", "error");
+        log("Scan Error: " + error.message);
     }
 
     // Cooldown 3 seconds
@@ -112,16 +145,11 @@ function showUI(name, badgeText, msg, type) {
     statusBadge.innerText = badgeText;
     resultMsg.innerText = msg;
     
-    resultCard.classList.remove("hidden", "success-card", "error-card");
+    resultCard.classList.add("visible");
+    resultCard.classList.remove("success-card", "error-card");
     resultCard.classList.add(type === "success" ? "success-card" : "error-card");
 }
 
-// ==========================================
-// 4. CAMERA START
-// ==========================================
-const scanner = new Html5QrcodeScanner("reader", { 
-    fps: 20, // Scans faster
-    qrbox: 250,
-    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] 
-});
+// Start Camera
+const scanner = new Html5QrcodeScanner("reader", { fps: 20, qrbox: 250 });
 scanner.render(onScanSuccess);

@@ -9,21 +9,27 @@ const firebaseConfig = {
 };
 
 // ==========================================
-// 2. SETUP
+// 2. SETUP & DOM ELEMENTS
 // ==========================================
 const consoleOutput = document.getElementById('console-output');
 const connectionBadge = document.getElementById('connection-status');
+
+// Result Card Elements
 const resultCard = document.getElementById("result-card");
-const studentNameEl = document.getElementById("student-name");
-const statusBadge = document.getElementById("status-badge");
-const resultMsg = document.getElementById("result-msg");
+const uiName = document.getElementById("student-name");
+const uiId = document.getElementById("student-id");
+const uiBadge = document.getElementById("status-badge");
+const uiIcon = document.getElementById("status-icon");
+const uiTime = document.getElementById("time-msg");
+
+// Sidebar Elements
 const attendanceList = document.getElementById("attendance-list");
 const countBadge = document.getElementById("count-badge");
 
 function log(msg) {
-    const p = document.createElement('div');
-    p.innerText = `> ${msg}`;
-    consoleOutput.prepend(p);
+    const div = document.createElement('div');
+    div.innerText = `> ${msg}`;
+    consoleOutput.prepend(div);
 }
 
 // Init Firebase
@@ -34,63 +40,24 @@ try {
     checkConnection();
 } catch (e) {
     connectionBadge.innerText = "Config Error";
-    connectionBadge.className = "status-badge offline";
+    connectionBadge.className = "status-pill offline";
 }
 
 async function checkConnection() {
     try {
         await db.collection('test').doc('ping').set({ active: true });
         connectionBadge.innerText = "System Online";
-        connectionBadge.className = "status-badge online";
-        
-        // Start listening for sidebar updates immediately
-        startLiveAttendanceList(); 
-        
+        connectionBadge.className = "status-pill online";
+        startLiveSidebar(); // Start listening to sidebar
     } catch (error) {
         connectionBadge.innerText = "Access Denied";
-        connectionBadge.className = "status-badge offline";
-        log("Error: Check Firebase Rules.");
+        connectionBadge.className = "status-pill offline";
+        log("Error: Check Firestore Rules");
     }
 }
 
 // ==========================================
-// 3. REAL-TIME SIDEBAR LISTENER
-// ==========================================
-function startLiveAttendanceList() {
-    // This listens to the database 24/7 for changes
-    db.collection("attendance")
-      .orderBy("timestamp", "desc") // Show newest first
-      .onSnapshot((snapshot) => {
-          
-          attendanceList.innerHTML = ""; // Clear list
-          countBadge.innerText = snapshot.size; // Update count
-
-          if (snapshot.empty) {
-              attendanceList.innerHTML = '<li class="empty-list">No students present yet.</li>';
-              return;
-          }
-
-          snapshot.forEach((doc) => {
-              const data = doc.data();
-              const time = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now';
-              
-              // Create list HTML
-              const li = document.createElement('li');
-              li.className = 'student-item';
-              li.innerHTML = `
-                  <div class="student-info">
-                      <strong>${data.name || 'Unknown'}</strong>
-                      <small>ID: ${data.id}</small>
-                  </div>
-                  <div class="time-stamp">${time}</div>
-              `;
-              attendanceList.appendChild(li);
-          });
-      });
-}
-
-// ==========================================
-// 4. SCANNING LOGIC
+// 3. SCANNING LOGIC (FIXED)
 // ==========================================
 let isScanning = true;
 
@@ -98,32 +65,47 @@ async function onScanSuccess(decodedText) {
     if (!isScanning) return;
     isScanning = false;
 
-    // 1. Parse Data
+    log(`Scanned: ${decodedText}`);
+
+    // A. Parse Scan Data
     let studentId = decodedText;
-    let studentName = "Unknown Student";
+    let studentName = null; // Don't guess yet
 
     try {
         const data = JSON.parse(decodedText);
         if(data.id) studentId = data.id;
         if(data.name) studentName = data.name;
     } catch (e) {
+        // Not JSON, just simple text ID
         studentId = decodedText;
     }
 
-    // 2. Check Database
+    // B. Check Database
     try {
         const docRef = db.collection("attendance").doc(studentId);
         const docSnap = await docRef.get();
 
         if (docSnap.exists) {
-            const data = docSnap.data();
-            showUI(studentName, "ALREADY HERE", "Duplicate Entry", "error");
+            const existingData = docSnap.data();
+            
+            // KEY FIX: If they are already there, use the NAME from the database!
+            const finalName = existingData.name || studentName || "Unknown Student";
+            
+            if (existingData.status === "Present") {
+                // DUPLICATE CASE
+                showResult(finalName, studentId, "ALREADY HERE", "error");
+                // Optional: Play beep sound here
+            } else {
+                // UPDATE CASE (rare)
+                await markPresent(studentId, finalName || "Unknown Student");
+            }
         } else {
-            await markPresent(studentId, studentName);
+            // NEW ENTRY CASE
+            await markPresent(studentId, studentName || "Unknown Student");
         }
 
     } catch (error) {
-        log("Scan Error: " + error.message);
+        log("DB Error: " + error.message);
     }
 
     // Cooldown 3 seconds
@@ -137,17 +119,60 @@ async function markPresent(id, name) {
         status: "Present",
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
-    showUI(name, "MARKED PRESENT", `ID: ${id}`, "success");
+    showResult(name, id, "MARKED PRESENT", "success");
 }
 
-function showUI(name, badgeText, msg, type) {
-    studentNameEl.innerText = name;
-    statusBadge.innerText = badgeText;
-    resultMsg.innerText = msg;
-    
+function showResult(name, id, status, type) {
+    uiName.innerText = name;
+    uiId.innerText = `ID: ${id}`;
+    uiBadge.innerText = status;
+    uiTime.innerText = new Date().toLocaleTimeString();
+
+    resultCard.classList.remove("hidden", "success-mode", "error-mode");
     resultCard.classList.add("visible");
-    resultCard.classList.remove("success-card", "error-card");
-    resultCard.classList.add(type === "success" ? "success-card" : "error-card");
+    
+    if (type === "success") {
+        resultCard.classList.add("success-mode");
+        uiIcon.innerText = "✅";
+    } else {
+        resultCard.classList.add("error-mode");
+        uiIcon.innerText = "⚠️";
+    }
+}
+
+// ==========================================
+// 4. LIVE SIDEBAR LISTENER
+// ==========================================
+function startLiveSidebar() {
+    db.collection("attendance")
+      .orderBy("timestamp", "desc")
+      .onSnapshot((snapshot) => {
+          attendanceList.innerHTML = "";
+          countBadge.innerText = snapshot.size;
+
+          if (snapshot.empty) {
+              attendanceList.innerHTML = '<li class="empty-state">No scans yet.</li>';
+              return;
+          }
+
+          snapshot.forEach((doc) => {
+              const data = doc.data();
+              const time = data.timestamp 
+                ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) 
+                : '...';
+
+              const li = document.createElement('li');
+              li.className = 'student-row';
+              li.innerHTML = `
+                  <div class="row-info">
+                      <strong>${data.name}</strong>
+                      <small>ID: ${data.id}</small>
+                  </div>
+                  <div class="row-time">${time}</div>
+              `;
+              attendanceList.appendChild(li);
+          });
+      });
 }
 
 // Start Camera

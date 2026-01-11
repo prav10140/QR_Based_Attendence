@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Attendance</title>
+    <title>Live Attendance Tracker</title>
     <link rel="shortcut icon" href="#">
     <link rel="stylesheet" href="style.css">
     
@@ -14,23 +14,36 @@
 </head>
 <body>
 
-    <div class="app-container">
-        <h1>Event Check-In</h1>
+    <div class="main-layout">
         
-        <div id="connection-status" class="status-badge waiting">Connecting to Database...</div>
+        <div class="scanner-section">
+            <h1>Event Check-In</h1>
+            <div id="connection-status" class="status-badge waiting">Connecting...</div>
 
-        <div id="reader"></div>
+            <div id="reader"></div>
 
-        <div id="result-card" class="hidden">
-            <h2 id="student-name">Student Name</h2>
-            <div class="badge" id="status-badge">PRESENT</div>
-            <p id="result-msg">Details here</p>
+            <div id="result-card" class="hidden">
+                <h2 id="student-name">Student Name</h2>
+                <div class="badge" id="status-badge">STATUS</div>
+                <p id="result-msg">Details</p>
+            </div>
+            
+            <div class="debug-log">
+                <h3>System Log:</h3>
+                <div id="console-output"></div>
+            </div>
         </div>
 
-        <div class="debug-log">
-            <h3>System Log:</h3>
-            <div id="console-output"></div>
+        <div class="sidebar-section">
+            <div class="sidebar-header">
+                <h2>Present Students</h2>
+                <span id="count-badge">0</span>
+            </div>
+            <ul id="attendance-list">
+                <li class="empty-list">Waiting for scans...</li>
+            </ul>
         </div>
+
     </div>
 
     <script src="app.js"></script>

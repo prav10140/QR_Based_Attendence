@@ -1,30 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Smart QR Attendance</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Gatekeeper</title>
+    
+    <link rel="stylesheet" href="style.css">
 
-<link rel="stylesheet" href="style.css">
-<script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
-
 <body>
-<div class="app">
 
-  <h1>QR Attendance</h1>
-  <p>Scan participant QR to verify entry</p>
+    <div class="container">
+        <header>
+            <h1>Event Check-In</h1>
+            <p>Scan participant QR Code to mark attendance</p>
+        </header>
 
-  <div id="reader"></div>
+        <div id="reader"></div>
 
-  <div id="status" class="waiting">
-    Waiting for QR scan...
-  </div>
+        <div id="result-card" class="hidden">
+            <h2 id="status-title">Status</h2>
+            <p id="status-message">Waiting...</p>
+            <div id="participant-details"></div>
+        </div>
+    </div>
 
-</div>
-
-<script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

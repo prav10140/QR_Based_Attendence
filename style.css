@@ -1,40 +1,83 @@
+:root {
+    --bg-color: #f4f6f8;
+    --card-bg: #ffffff;
+    --primary: #2563eb;
+    --success: #10b981;
+    --error: #ef4444;
+    --text-dark: #1f2937;
+    --text-light: #6b7280;
+}
+
 body {
-  background: linear-gradient(120deg, #0f172a, #020617);
-  font-family: Arial, sans-serif;
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    margin: 0;
+    padding: 20px;
+    color: var(--text-dark);
+    display: flex;
+    justify-content: center;
 }
 
-.app {
-  background: #020617;
-  padding: 30px;
-  border-radius: 15px;
-  width: 360px;
-  box-shadow: 0 0 20px #0ea5e9;
-  text-align: center;
+.container {
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
 }
 
-h1 {
-  color: #38bdf8;
+header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: var(--primary);
 }
 
+header p {
+    color: var(--text-light);
+    margin-top: 5px;
+    margin-bottom: 25px;
+}
+
+/* Scanner Customization */
 #reader {
-  margin: 20px auto;
-  width: 300px;
-  border-radius: 10px;
-  overflow: hidden;
+    width: 100%;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: none !important;
+    overflow: hidden;
 }
 
-#status {
-  margin-top: 20px;
-  font-size: 20px;
-  padding: 12px;
-  border-radius: 10px;
+#reader__scan_region {
+    background: transparent;
 }
 
-.waiting { background: #334155; }
-.success { background: #16a34a; }
-.error { background: #dc2626; }
+/* Result Card */
+#result-card {
+    background: var(--card-bg);
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Status Modes */
+.status-success {
+    border-left: 6px solid var(--success);
+}
+.status-success h2 { color: var(--success); }
+
+.status-error {
+    border-left: 6px solid var(--error);
+}
+.status-error h2 { color: var(--error); }
+
+#participant-details {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    font-weight: bold;
+}
